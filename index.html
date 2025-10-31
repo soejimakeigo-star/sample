@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>名前と生年月日から数字を出すツール</title>
+  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f0f8ff;
+      text-align: center;
+      padding-top: 50px;
+    }
+    input {
+      margin: 5px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 14px 20px; /* 上下の余白を増やしてクリック領域を広げる（下方向に特にゆとり） */
+      font-size: 16px;
+      cursor: pointer;
+      display: inline-block;
+      line-height: 1;
+      border-radius: 6px;
+    }
+
+    /* 任意：ボタン下のクリック余白をさらに確保したい場合 */
+    .button-wrapper {
+      display: inline-block;
+      padding-bottom: 12px; /* ボタンの下側に透明のクリック領域を追加 */
+      margin-bottom: 4px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #3366cc;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+
+    /* 名前表示（図の上） */
+    #nameDisplayContainer {
+      width: 720px;  /* 520px → 720px に拡大 */
+      margin: 0 auto 12px;
+      text-align: center;
+      font-family: "Yu Gothic UI", "Segoe UI", sans-serif;
+    }
+    .fw-name {
+      font-size: 28px;
+      letter-spacing: 10px;
+      font-weight: 720;
+      color: #222;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fw-mapping {
+      font-size: 28px;  /* 20px から 28px に変更して .fw-name と同じに */
+      letter-spacing: 10px;
+      color: #444;
+      margin-top: 6px;
+      white-space: nowrap;
+    }
+
+    /* 図（大きめの + とラベル） */
+    #diagram {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 24px auto;
+    }
+    #diagram .plus {
+      font-size: 260px;
+      line-height: 240px;
+      color: #ddd;
+      text-align: center;
+      user-select: none;
+    }
+    /* ラベル位置 */
+    .label {
+      position: absolute;
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+      background: rgba(255,255,255,0.8);
+      padding: 6px 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      white-space: nowrap; /* 追加：折り返しを防ぎ一行で表示 */
+    }
+    #label-top    { top: 12%;  left: 50%; }
+    #label-right  { top: 50%;  left: 88%; }
+    #label-bottom { top: 88%;  left: 50%; }
+    #label-left   { top: 50%;  left: 12%; }
+
+    /* IT Table */
+    #itTableContainer {
+      width: 520px;
+      margin: 12px auto 0;
+      text-align: center;
+    }
+    #itTableContainer h2 {
+      margin: 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+    #itTable {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 520px;
+    }
+    #itTable th, #itTable td {
+      border: 1px solid #cce;
+      padding: 8px;
+      font-size: 16px;
+      background: #fff;
+    }
+    #itTable th {
+      background: #eef6ff;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔢 名前と生年月日から数字を出すツール</h1>
+
+  <!-- ボタンを名前入力欄の上へ移動 -->
+  <button onclick="calculateNumber()">数秘Chart</button>
+  
+  <div>
+    <label>名前（ローマ字）：</label>
+    <input type="text" id="nameInput" placeholder="Taro">
+  </div>
+  
+  <div>
+    <label>生年月日：</label>
+    <!-- ここを type="text" に変更し、連続入力（YYYYMMDD）を許可 -->
+    <input type="text" id="birthInput" placeholder="YYYY/MM/DD または YYYYMMDD" inputmode="numeric" maxlength="10">
+  </div>
+
+  <!-- 名前表示（図の上） -->
+  <div id="nameDisplayContainer" aria-hidden="false">
+    <div id="fwName" class="fw-name"></div>
+    <div id="fwMapping" class="fw-mapping"></div>
+  </div>
+
+  <!-- 図を挿入 -->
+  <div id="diagram" aria-hidden="false">
+    <div class="plus">+</div>
+    <div id="label-top" class="label">P</div>
+    <div id="label-right" class="label">D</div>
+    <div id="label-bottom" class="label">S</div>
+    <div id="label-left" class="label">LP</div>
+  </div>
+
+  <!-- IT・Table（図の下） -->
+  <div id="itTableContainer" aria-hidden="false">
+    <h2>IT Table</h2>
+    <table id="itTable" aria-label="IT Table: numbers and counts">
+      <tr id="itHeader">
+        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+      </tr>
+      <tr id="itCounts">
+        <td id="it-count-1">0</td><td id="it-count-2">0</td><td id="it-count-3">0</td>
+        <td id="it-count-4">0</td><td id="it-count-5">0</td><td id="it-count-6">0</td>
+        <td id="it-count-7">0</td><td id="it-count-8">0</td><td id="it-count-9">0</td>
+      </tr>
+    </table>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    // birthInput を自動で YYYY/MM/DD 形式に整形（数字のみ入力でスラッシュ挿入）
+    (function() {
+      const el = document.getElementById('birthInput');
+      if (!el) return;
+      el.addEventListener('input', () => {
+        // 現在のカーソル位置は考慮せず単純フォーマット（要望どおり他は変更なし）
+        let digits = (el.value || '').replace(/\D/g, '').slice(0, 8); // 最大 8 桁 (YYYYMMDD)
+        let out = '';
+        if (digits.length <= 4) {
+          out = digits;
+        } else if (digits.length <= 6) {
+          out = digits.slice(0,4) + '/' + digits.slice(4);
+        } else {
+          out = digits.slice(0,4) + '/' + digits.slice(4,6) + '/' + digits.slice(6,8);
+        }
+        el.value = out;
+      });
+    })();
+  </script>
+</body>
+</html>
