@@ -112,6 +112,9 @@ function calculateNumber() {
 
   // 数字を一桁になるまで足す関数（mastersで終了条件を指定）
   function sumDigits(num, masters = [11, 22, 33]) {
+    const n = parseInt(num, 10);
+    if (masters.includes(n)) return n;
+    
     let sum = 0;
     String(num).split('').forEach(d => {
       const n = parseInt(d, 10);
@@ -186,3 +189,4 @@ function calculateNumber() {
   if (fwNameEl) fwNameEl.textContent = dispLetters.join('');
   if (fwMapEl)  fwMapEl.textContent  = dispNums.join('');
 }
+
